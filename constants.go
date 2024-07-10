@@ -137,10 +137,10 @@ const (
 	//	errInvalidCallback         = ErrCode(-113)
 	errInvalidAcl = ErrCode(-114)
 
-//	errAuthFailed              = ErrCode(-115)
-//	errClosing                 = ErrCode(-116)
-//	errNothing                 = ErrCode(-117)
-//	errSessionMoved            = ErrCode(-118)
+// errAuthFailed              = ErrCode(-115)
+// errClosing                 = ErrCode(-116)
+// errNothing                 = ErrCode(-117)
+// errSessionMoved            = ErrCode(-118)
 )
 
 // four letter word commands / responses

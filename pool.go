@@ -20,21 +20,21 @@ import (
 	"fmt"
 	"sync"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/golang/glog"
+	"go.etcd.io/etcd/client/v3"
+	"k8s.io/klog/v2"
 )
 
 type SessionPool struct {
-	sessions map[etcd.LeaseID]Session
-	c        *etcd.Client
+	sessions map[clientv3.LeaseID]Session
+	c        *clientv3.Client
 	mu       sync.RWMutex
 	be       sessionBackend
 }
 
-func NewSessionPool(client *etcd.Client) *SessionPool {
+func NewSessionPool(client *clientv3.Client) *SessionPool {
 	be := &etcdSessionBackend{client}
 	return &SessionPool{
-		sessions: make(map[etcd.LeaseID]Session),
+		sessions: make(map[clientv3.LeaseID]Session),
 		c:        client,
 		be:       be,
 	}
@@ -58,7 +58,7 @@ func (sp *SessionPool) Auth(zka AuthConn) (Session, error) {
 	}
 
 	// TODO use ttl from lease
-	lid := etcd.LeaseID(req.SessionID)
+	lid := clientv3.LeaseID(req.SessionID)
 	if lid == 0 {
 		lid, req.Passwd, err = sp.be.create(int64(req.TimeOut) / 1000)
 	} else {
@@ -80,7 +80,7 @@ func (sp *SessionPool) Auth(zka AuthConn) (Session, error) {
 		SessionID:       Sid(lid),
 		Passwd:          req.Passwd,
 	}
-	glog.V(7).Infof("authresp=%+v", resp)
+	klog.V(7).Infof("authresp=%+v", resp)
 	zkc, aerr := zka.Write(AuthResponse{Resp: resp})
 	if zkc == nil || aerr != nil {
 		return nil, aerr
@@ -99,15 +99,15 @@ func (sp *SessionPool) Auth(zka AuthConn) (Session, error) {
 }
 
 type sessionBackend interface {
-	create(ttl int64) (etcd.LeaseID, []byte, error)
-	resume(Sid, []byte) (etcd.LeaseID, error)
+	create(ttl int64) (clientv3.LeaseID, []byte, error)
+	resume(Sid, []byte) (clientv3.LeaseID, error)
 }
 
 type etcdSessionBackend struct {
-	c *etcd.Client
+	c *clientv3.Client
 }
 
-func (sp *etcdSessionBackend) create(ttl int64) (etcd.LeaseID, []byte, error) {
+func (sp *etcdSessionBackend) create(ttl int64) (clientv3.LeaseID, []byte, error) {
 	pwd := make([]byte, 16)
 	if _, err := rand.Read(pwd); err != nil {
 		return 0, nil, err
@@ -119,15 +119,15 @@ func (sp *etcdSessionBackend) create(ttl int64) (etcd.LeaseID, []byte, error) {
 	if err != nil {
 		return 0, nil, err
 	}
-	_, err = sp.c.Put(sp.c.Ctx(), lid2key(lcr.ID), string(pwd), etcd.WithLease(lcr.ID))
+	_, err = sp.c.Put(sp.c.Ctx(), lid2key(lcr.ID), string(pwd), clientv3.WithLease(lcr.ID))
 	if err != nil {
 		return 0, nil, err
 	}
 	return lcr.ID, pwd, nil
 }
 
-func (sp *etcdSessionBackend) resume(sid Sid, pwd []byte) (etcd.LeaseID, error) {
-	gresp, gerr := sp.c.Get(sp.c.Ctx(), lid2key(etcd.LeaseID(sid)))
+func (sp *etcdSessionBackend) resume(sid Sid, pwd []byte) (clientv3.LeaseID, error) {
+	gresp, gerr := sp.c.Get(sp.c.Ctx(), lid2key(clientv3.LeaseID(sid)))
 	switch {
 	case gerr != nil:
 		return 0, gerr
@@ -136,7 +136,7 @@ func (sp *etcdSessionBackend) resume(sid Sid, pwd []byte) (etcd.LeaseID, error) 
 	case !bytes.Equal(gresp.Kvs[0].Value, pwd):
 		return 0, fmt.Errorf("bad passwd")
 	}
-	return etcd.LeaseID(sid), nil
+	return clientv3.LeaseID(sid), nil
 }
 
-func lid2key(lid etcd.LeaseID) string { return mkPathSession(uint64(lid)) }
+func lid2key(lid clientv3.LeaseID) string { return mkPathSession(uint64(lid)) }

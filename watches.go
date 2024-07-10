@@ -17,9 +17,9 @@ package zetcd
 import (
 	"sync"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/golang/glog"
+	"go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
+	"k8s.io/klog/v2"
 )
 
 type Watches interface {
@@ -34,7 +34,7 @@ type WatchHandler func(ZXid, EventType)
 
 type watches struct {
 	mu sync.Mutex
-	c  *etcd.Client
+	c  *clientv3.Client
 
 	path2watch [5]map[string]*watch
 
@@ -43,13 +43,13 @@ type watches struct {
 }
 
 type watch struct {
-	c *etcd.Client
+	c *clientv3.Client
 
 	xid    Xid
 	evtype EventType
 	path   string
 
-	wch    etcd.WatchChan
+	wch    clientv3.WatchChan
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -58,11 +58,11 @@ type watch struct {
 	donec    chan struct{}
 }
 
-func ev2evtype(ev *etcd.Event) EventType {
+func ev2evtype(ev *clientv3.Event) EventType {
 	switch {
 	case ev.IsCreate():
 		return EventNodeCreated
-	case ev.Type == etcd.EventTypeDelete:
+	case ev.Type == clientv3.EventTypeDelete:
 		return EventNodeDeleted
 	case ev.IsModify():
 		return EventNodeDataChanged
@@ -71,7 +71,7 @@ func ev2evtype(ev *etcd.Event) EventType {
 	}
 }
 
-func newWatches(c *etcd.Client) *watches {
+func newWatches(c *clientv3.Client) *watches {
 	ctx, cancel := context.WithCancel(context.TODO())
 	ws := &watches{
 		c:      c,
@@ -93,7 +93,7 @@ func (ws *watches) Watch(rev ZXid, xid Xid, path string, evtype EventType, cb Wa
 	}
 
 	ctx, cancel := context.WithCancel(ws.ctx)
-	var wch etcd.WatchChan
+	var wch clientv3.WatchChan
 	switch evtype {
 	case EventNodeDataChanged:
 		fallthrough
@@ -101,13 +101,13 @@ func (ws *watches) Watch(rev ZXid, xid Xid, path string, evtype EventType, cb Wa
 		fallthrough
 	// use rev+1 watch begins AFTER the requested zxid
 	case EventNodeDeleted:
-		wch = ws.c.Watch(ctx, mkPathKey(path), etcd.WithRev(int64(rev+1)))
+		wch = ws.c.Watch(ctx, mkPathKey(path), clientv3.WithRev(int64(rev+1)))
 	case EventNodeChildrenChanged:
 		wch = ws.c.Watch(
 			ctx,
 			getListPfx(path),
-			etcd.WithPrefix(),
-			etcd.WithRev(int64(rev+1)))
+			clientv3.WithPrefix(),
+			clientv3.WithRev(int64(rev+1)))
 	default:
 		panic("unsupported watch op")
 	}
@@ -116,7 +116,7 @@ func (ws *watches) Watch(rev ZXid, xid Xid, path string, evtype EventType, cb Wa
 	defer ws.mu.Unlock()
 	curw = ws.path2watch[evtype][path]
 	if curw != nil {
-		glog.V(7).Infof("ELIDING WATCH on xid=%d evtype=%d, already have %s evtype=%d", xid, evtype, path, curw.evtype)
+		klog.V(7).Infof("ELIDING WATCH on xid=%d evtype=%d, already have %s evtype=%d", xid, evtype, path, curw.evtype)
 		cancel()
 		return
 	}

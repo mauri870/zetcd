@@ -17,7 +17,7 @@ package zk
 import (
 	"fmt"
 
-	"github.com/etcd-io/zetcd"
+	"github.com/mauri870/zetcd"
 )
 
 // zkZK takes incoming ZK requests and forwards them to a remote ZK server

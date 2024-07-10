@@ -19,9 +19,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/etcd-io/zetcd"
-	"github.com/etcd-io/zetcd/xchk"
-	"github.com/etcd-io/zetcd/zk"
+	"github.com/mauri870/zetcd"
+	"github.com/mauri870/zetcd/xchk"
+	"github.com/mauri870/zetcd/zk"
 )
 
 type zkCluster interface {

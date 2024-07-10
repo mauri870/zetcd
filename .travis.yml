@@ -1,6 +1,6 @@
 dist: trusty
 language: go
-go_import_path: github.com/etcd-io/zetcd
+go_import_path: github.com/mauri870/zetcd
 sudo: false
 
 go:
@@ -8,17 +8,17 @@ go:
 
 env:
   matrix:
-   - TARGET=amd64
+    - TARGET=amd64
 
 before_install:
- - go get -v -u honnef.co/go/tools/cmd/gosimple
- - go get -v -u honnef.co/go/tools/cmd/unused
- - go get -v -u honnef.co/go/tools/cmd/staticcheck
- - export GOROOT=$(go env GOROOT)
+  - go get -v -u honnef.co/go/tools/cmd/gosimple
+  - go get -v -u honnef.co/go/tools/cmd/unused
+  - go get -v -u honnef.co/go/tools/cmd/staticcheck
+  - export GOROOT=$(go env GOROOT)
 
 matrix:
   fast_finish: true
 
 script:
- - make fmt
- - make test
+  - make fmt
+  - make test

@@ -18,8 +18,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/golang/glog"
 	"golang.org/x/net/context"
+	"k8s.io/klog/v2"
 )
 
 type acceptHandler func(conn net.Conn, auth AuthFunc, zk ZKFunc)
@@ -43,7 +43,7 @@ func newHandleGlobalSerialRequests() acceptHandler {
 			return
 		}
 		defer s.Close()
-		glog.V(9).Infof("serving global serial session requests on s=%+v", s)
+		klog.V(9).Infof("serving global serial session requests on s=%+v", s)
 		for zkreq := range s.Read() {
 			mu.Lock()
 			err := serveRequest(s, zke, zkreq)
@@ -61,7 +61,7 @@ func handleSessionSerialRequests(conn net.Conn, auth AuthFunc, zk ZKFunc) {
 		return
 	}
 	defer s.Close()
-	glog.V(9).Infof("serving serial session requests on id=%x", s.Sid())
+	klog.V(9).Infof("serving serial session requests on id=%x", s.Sid())
 	for zkreq := range s.Read() {
 		if err := serveRequest(s, zke, zkreq); err != nil {
 			return
@@ -70,13 +70,13 @@ func handleSessionSerialRequests(conn net.Conn, auth AuthFunc, zk ZKFunc) {
 }
 
 func serveRequest(s Session, zke ZK, zkreq ZKRequest) error {
-	glog.V(9).Infof("zkreq=%v", &zkreq)
+	klog.V(9).Infof("zkreq=%v", &zkreq)
 	if zkreq.err != nil {
 		return zkreq.err
 	}
 	zkresp := DispatchZK(zke, zkreq.xid, zkreq.req)
 	if zkresp.Err != nil {
-		glog.V(9).Infof("dispatch error", zkresp.Err)
+		klog.V(9).Infof("dispatch error", zkresp.Err)
 		return zkresp.Err
 	}
 	if zkresp.Hdr.Err == 0 {
@@ -88,7 +88,7 @@ func serveRequest(s Session, zke ZK, zkreq ZKRequest) error {
 }
 
 func openSession(conn net.Conn, auth AuthFunc, zk ZKFunc) (Session, ZK, error) {
-	glog.V(6).Infof("accepted remote connection %q", conn.RemoteAddr())
+	klog.V(6).Infof("accepted remote connection %q", conn.RemoteAddr())
 	s, serr := auth(NewAuthConn(conn))
 	if serr != nil {
 		return nil, nil, serr
@@ -105,7 +105,7 @@ func serveByHandler(h acceptHandler, ctx context.Context, ln net.Listener, auth 
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			glog.V(5).Infof("Accept()=%v", err)
+			klog.V(5).Infof("Accept()=%v", err)
 		} else {
 			go h(conn, auth, zk)
 		}
@@ -138,7 +138,7 @@ func handleSessionConcurrentRequests(conn net.Conn, auth AuthFunc, zk ZKFunc) {
 	defer s.Close()
 	var wg sync.WaitGroup
 	wg.Add(1)
-	glog.V(9).Infof("serving concurrent session requests on id=%x", s.Sid())
+	klog.V(9).Infof("serving concurrent session requests on id=%x", s.Sid())
 	for zkreq := range s.Read() {
 		wg.Add(1)
 		go func() {
@@ -153,7 +153,7 @@ func handleSessionConcurrentRequests(conn net.Conn, auth AuthFunc, zk ZKFunc) {
 
 func newHandleLogClose(ch acceptHandler) acceptHandler {
 	return func(conn net.Conn, auth AuthFunc, zk ZKFunc) {
-		glog.V(6).Infof("closing remote connection %q", conn.RemoteAddr())
+		klog.V(6).Infof("closing remote connection %q", conn.RemoteAddr())
 		ch(conn, auth, zk)
 	}
 }

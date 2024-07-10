@@ -19,9 +19,9 @@ import (
 	"net"
 	"sync"
 
-	"github.com/etcd-io/zetcd"
-	"github.com/golang/glog"
+	"github.com/mauri870/zetcd"
 	"golang.org/x/net/context"
+	"k8s.io/klog/v2"
 )
 
 type session struct {
@@ -51,7 +51,7 @@ func (s *session) Close() {
 
 func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	defer zka.Close()
-	glog.V(6).Infof("newSession(%s)", servers)
+	klog.V(6).Infof("newSession(%s)", servers)
 	req := zetcd.ConnectRequest{}
 	areq, err := zka.Read()
 	if err != nil {
@@ -63,12 +63,12 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	// create connection to zk server based on 'servers'
 	zkconn, err := net.Dial("tcp", servers[0])
 	if err != nil {
-		glog.V(6).Infof("failed to dial (%v)", err)
+		klog.V(6).Infof("failed to dial (%v)", err)
 		return nil, err
 	}
 	// send connection request
 	if err = zetcd.WritePacket(zkconn, areq.Req); err != nil {
-		glog.V(6).Infof("failed to write connection request (%v)", err)
+		klog.V(6).Infof("failed to write connection request (%v)", err)
 		zkconn.Close()
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	resp := zetcd.ConnectResponse{}
 	flw, err := zetcd.ReadPacket(zkconn, &resp)
 	if err != nil {
-		glog.V(6).Infof("failed to read connection response (%v)", err)
+		klog.V(6).Infof("failed to read connection response (%v)", err)
 		return nil, err
 	}
 	// pass response back to proxy
@@ -87,7 +87,7 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	glog.V(6).Infof("auth resp OK (%+v)", resp)
+	klog.V(6).Infof("auth resp OK (%+v)", resp)
 
 	s := &session{
 		Conn:    zkc,
@@ -105,7 +105,7 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 func (s *session) future(xid zetcd.Xid, op interface{}) <-chan zetcd.ZKResponse {
 	ch := make(chan zetcd.ZKResponse, 1)
 	if s.futures == nil {
-		glog.V(6).Infof("futuresClosed=%+v", op)
+		klog.V(6).Infof("futuresClosed=%+v", op)
 		ch <- zetcd.ZKResponse{Err: fmt.Errorf("closed")}
 		return ch
 	}
@@ -119,7 +119,7 @@ func (s *session) future(xid zetcd.Xid, op interface{}) <-chan zetcd.ZKResponse 
 		s.mu.Unlock()
 		return ch
 	}
-	glog.V(6).Infof("waitFutureSendResp=%+v", op)
+	klog.V(6).Infof("waitFutureSendResp=%+v", op)
 	return ch
 }
 
@@ -136,10 +136,10 @@ func (s *session) recvLoop() {
 	}()
 	for resp := range s.zkc.Read() {
 		if resp.Err != nil {
-			glog.V(6).Infof("zk/zkresp=Err(%v)", resp.Err)
+			klog.V(6).Infof("zk/zkresp=Err(%v)", resp.Err)
 			return
 		}
-		glog.V(6).Infof("zk/zkresp=(%+v,%+v)", *resp.Hdr, resp.Resp)
+		klog.V(6).Infof("zk/zkresp=(%+v,%+v)", *resp.Hdr, resp.Resp)
 		s.mu.Lock()
 		if ch := s.futures[resp.Hdr.Xid]; ch != nil {
 			ch <- resp
@@ -157,7 +157,7 @@ func (s *session) recvLoop() {
 			r = resp.Resp
 		}
 
-		glog.V(6).Infof("zk/zkSessOOB=%+v %+v", resp.Hdr, r)
+		klog.V(6).Infof("zk/zkSessOOB=%+v %+v", resp.Hdr, r)
 		s.Send(resp.Hdr.Xid, resp.Hdr.Zxid, r)
 	}
 }

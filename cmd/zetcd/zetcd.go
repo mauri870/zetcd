@@ -24,12 +24,12 @@ import (
 	"os"
 	"strings"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/pkg/transport"
-	"github.com/etcd-io/zetcd"
-	"github.com/etcd-io/zetcd/version"
-	"github.com/etcd-io/zetcd/xchk"
-	"github.com/etcd-io/zetcd/zk"
+	"github.com/mauri870/zetcd"
+	"github.com/mauri870/zetcd/version"
+	"github.com/mauri870/zetcd/xchk"
+	"github.com/mauri870/zetcd/zk"
+	"go.etcd.io/etcd/client/pkg/v3/transport"
+	"go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
 )
 
@@ -54,8 +54,10 @@ func getTlsConfig(etcdCertFile string, etcdKeyFile string, etcdCaFile string) (*
 
 func newZKSecureEtcd(etcdEps []string, tlsConfig *tls.Config) (p personality) {
 	// talk to the etcd3 server
-	cfg := etcd.Config{Endpoints: etcdEps, TLS: tlsConfig}
-	c, err := etcd.New(cfg)
+	c, err := clientv3.New(clientv3.Config{
+		Endpoints: etcdEps,
+		TLS:       tlsConfig,
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -67,8 +69,9 @@ func newZKSecureEtcd(etcdEps []string, tlsConfig *tls.Config) (p personality) {
 
 func newZKEtcd(etcdEps []string) (p personality) {
 	// talk to the etcd3 server
-	cfg := etcd.Config{Endpoints: etcdEps}
-	c, err := etcd.New(cfg)
+	c, err := clientv3.New(clientv3.Config{
+		Endpoints: etcdEps,
+	})
 	if err != nil {
 		panic(err)
 	}

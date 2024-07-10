@@ -4,8 +4,8 @@ docker run \
     --cidfile=cid \
     -e VERSION=$VERSION \
     -e SHA=$SHA \
-    -v $PWD:/go/src/github.com/etcd-io/zetcd:ro \
-    -w /go/src/github.com/etcd-io/zetcd \
+    -v $PWD:/go/src/github.com/mauri870/zetcd:ro \
+    -w /go/src/github.com/mauri870/zetcd \
     golang:1.10.2-alpine \
     /bin/sh -x -c scripts/release-binary
 

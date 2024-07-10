@@ -23,13 +23,13 @@ import (
 	"strings"
 	"time"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	v3sync "github.com/coreos/etcd/clientv3/concurrency"
-	"github.com/golang/glog"
+	"go.etcd.io/etcd/client/v3"
+	v3sync "go.etcd.io/etcd/client/v3/concurrency"
+	"k8s.io/klog/v2"
 )
 
 type zkEtcd struct {
-	c *etcd.Client
+	c *clientv3.Client
 	s Session
 }
 
@@ -42,7 +42,7 @@ type opBundle struct {
 // PerfectZXid is enabled to insert err writes to match zookeeper's zxids
 var PerfectZXidMode bool = true
 
-func NewZKEtcd(c *etcd.Client, s Session) ZK { return &zkEtcd{c, s} }
+func NewZKEtcd(c *clientv3.Client, s Session) ZK { return &zkEtcd{c, s} }
 
 func (z *zkEtcd) Create(xid Xid, op *CreateRequest) ZKResponse {
 	b := z.mkCreateTxnOp(op)
@@ -50,7 +50,7 @@ func (z *zkEtcd) Create(xid Xid, op *CreateRequest) ZKResponse {
 	if resp == nil {
 		return zkErr
 	}
-	glog.V(7).Infof("Create(%v) = (zxid=%v); txnresp: %+v", xid, resp.Header.Revision, *resp)
+	klog.V(7).Infof("Create(%v) = (zxid=%v); txnresp: %+v", xid, resp.Header.Revision, *resp)
 	return b.reply(xid, ZXid(resp.Header.Revision))
 }
 
@@ -68,9 +68,9 @@ func (z *zkEtcd) mkCreateTxnOp(op *CreateRequest) opBundle {
 		return mkErrTxnOp(ErrInvalidACL)
 	}
 
-	opts := []etcd.OpOption{}
+	opts := []clientv3.OpOption{}
 	if (op.Flags & FlagEphemeral) != 0 {
-		opts = append(opts, etcd.WithLease(etcd.LeaseID(z.s.Sid())))
+		opts = append(opts, clientv3.WithLease(clientv3.LeaseID(z.s.Sid())))
 	}
 	if (op.Flags & ^(FlagSequence | FlagEphemeral)) != 0 {
 		// support seq flag
@@ -165,13 +165,13 @@ func (z *zkEtcd) GetChildren2(xid Xid, op *GetChildren2Request) ZKResponse {
 				State: StateSyncConnected,
 				Path:  op.Path,
 			}
-			glog.V(7).Infof("WatchChild (%v,%v,%+v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchChild (%v,%v,%+v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, EventNodeChildrenChanged, f)
 	}
 
-	glog.V(7).Infof("GetChildren2(%v) = (zxid=%v, resp=%+v)", zxid, xid, *resp)
+	klog.V(7).Infof("GetChildren2(%v) = (zxid=%v, resp=%+v)", zxid, xid, *resp)
 	return mkZKResp(xid, zxid, resp)
 }
 
@@ -185,7 +185,7 @@ func (z *zkEtcd) Delete(xid Xid, op *DeleteRequest) ZKResponse {
 	if resp == nil {
 		return zkErr
 	}
-	glog.V(7).Infof("Delete(%v) = (zxid=%v, resp=%+v)", xid, resp.Header.Revision, *resp)
+	klog.V(7).Infof("Delete(%v) = (zxid=%v, resp=%+v)", xid, resp.Header.Revision, *resp)
 	return b.reply(xid, ZXid(resp.Header.Revision))
 }
 
@@ -219,10 +219,10 @@ func (z *zkEtcd) mkDeleteTxnOp(op *DeleteRequest) opBundle {
 		// Check if directory has any children.
 		gresp, gerr := z.c.Get(z.c.Ctx(), getListPfx(p),
 			// TODO: monotonic revisions from serializable
-			// etcd.WithSerializable(),
-			etcd.WithPrefix(),
-			etcd.WithCountOnly(),
-			etcd.WithLimit(1))
+			// clientv3.WithSerializable(),
+			clientv3.WithPrefix(),
+			clientv3.WithCountOnly(),
+			clientv3.WithLimit(1))
 		if gerr != nil {
 			return gerr
 		}
@@ -283,7 +283,7 @@ func (z *zkEtcd) Exists(xid Xid, op *ExistsRequest) ZKResponse {
 				State: StateSyncConnected,
 				Path:  op.Path,
 			}
-			glog.V(7).Infof("WatchExists (%v,%v,%+v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchExists (%v,%v,%+v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, ev, f)
@@ -293,7 +293,7 @@ func (z *zkEtcd) Exists(xid Xid, op *ExistsRequest) ZKResponse {
 		return apiErrToZKErr(xid, zxid, err)
 	}
 
-	glog.V(7).Infof("Exists(%v) = (zxid=%v, resp=%+v)", xid, zxid, *exResp)
+	klog.V(7).Infof("Exists(%v) = (zxid=%v, resp=%+v)", xid, zxid, *exResp)
 	return mkZKResp(xid, zxid, exResp)
 }
 
@@ -321,7 +321,7 @@ func (z *zkEtcd) GetData(xid Xid, op *GetDataRequest) ZKResponse {
 				State: StateSyncConnected,
 				Path:  op.Path,
 			}
-			glog.V(7).Infof("WatchData (%v,%v,%+v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchData (%v,%v,%+v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, EventNodeDataChanged, f)
@@ -332,7 +332,7 @@ func (z *zkEtcd) GetData(xid Xid, op *GetDataRequest) ZKResponse {
 		datResp.Data = []byte(txnresp.Responses[2].GetResponseRange().Kvs[0].Value)
 	}
 
-	glog.V(7).Infof("GetData(%v) = (zxid=%v, resp=%+v)", xid, zxid, *datResp)
+	klog.V(7).Infof("GetData(%v) = (zxid=%v, resp=%+v)", xid, zxid, *datResp)
 	return mkZKResp(xid, zxid, datResp)
 }
 
@@ -342,7 +342,7 @@ func (z *zkEtcd) SetData(xid Xid, op *SetDataRequest) ZKResponse {
 	if resp == nil {
 		return zkErr
 	}
-	glog.V(7).Infof("SetData(%v) = (zxid=%v); txnresp: %+v", xid, resp.Header.Revision, *resp)
+	klog.V(7).Infof("SetData(%v) = (zxid=%v); txnresp: %+v", xid, resp.Header.Revision, *resp)
 	return b.reply(xid, ZXid(resp.Header.Revision))
 }
 
@@ -362,9 +362,9 @@ func (z *zkEtcd) mkSetDataTxnOp(op *SetDataRequest) opBundle {
 			return ErrBadVersion
 
 		}
-		s.Put(mkPathKey(p), string(op.Data), etcd.WithIgnoreLease())
-		s.Put(mkPathVer(p), string(encodeInt64(int64(currentVersion+1))), etcd.WithIgnoreLease())
-		s.Put(mkPathMTime(p), encodeTime(), etcd.WithIgnoreLease())
+		s.Put(mkPathKey(p), string(op.Data), clientv3.WithIgnoreLease())
+		s.Put(mkPathVer(p), string(encodeInt64(int64(currentVersion+1))), clientv3.WithIgnoreLease())
+		s.Put(mkPathMTime(p), encodeTime(), clientv3.WithIgnoreLease())
 		return nil
 	}
 
@@ -372,7 +372,7 @@ func (z *zkEtcd) mkSetDataTxnOp(op *SetDataRequest) opBundle {
 		z.s.Wait(zxid, p, EventNodeDataChanged)
 		statResp, err := z.c.Txn(z.c.Ctx()).Then(statGetsRev(p, int64(zxid))...).Commit()
 		if err != nil {
-			glog.Warningf("set data failed (%v)", err)
+			klog.Warningf("set data failed (%v)", err)
 			return mkZKErr(xid, zxid, errSystemError)
 		}
 		st, _ := statTxn(op.Path, statResp)
@@ -386,7 +386,7 @@ func (z *zkEtcd) GetAcl(xid Xid, op *GetAclRequest) ZKResponse {
 	resp := &GetAclResponse{}
 	p := mkPath(op.Path)
 
-	gets := []etcd.Op{etcd.OpGet(mkPathACL(p))}
+	gets := []clientv3.Op{clientv3.OpGet(mkPathACL(p))}
 	gets = append(gets, statGets(p)...)
 	txnresp, err := z.c.Txn(z.c.Ctx()).Then(gets...).Commit()
 	if err != nil {
@@ -401,7 +401,7 @@ func (z *zkEtcd) GetAcl(xid Xid, op *GetAclRequest) ZKResponse {
 	}
 	resp.Acl = decodeACLs(resps[0].GetResponseRange().Kvs[0].Value)
 
-	glog.V(7).Infof("GetAcl(%v) = (zxid=%v, resp=%+v)", xid, zxid, *resp)
+	klog.V(7).Infof("GetAcl(%v) = (zxid=%v, resp=%+v)", xid, zxid, *resp)
 	return mkZKResp(xid, zxid, resp)
 }
 
@@ -442,13 +442,13 @@ func (z *zkEtcd) GetChildren(xid Xid, op *GetChildrenRequest) ZKResponse {
 				State: StateSyncConnected,
 				Path:  op.Path,
 			}
-			glog.V(7).Infof("WatchChild (%v,%v,%+v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchChild (%v,%v,%+v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, EventNodeChildrenChanged, f)
 	}
 
-	glog.V(7).Infof("GetChildren(%v) = (zxid=%v, resp=%+v)", xid, zxid, *resp)
+	klog.V(7).Infof("GetChildren(%v) = (zxid=%v, resp=%+v)", xid, zxid, *resp)
 	return mkZKResp(xid, zxid, resp)
 }
 
@@ -464,7 +464,7 @@ func (z *zkEtcd) Sync(xid Xid, op *SyncRequest) ZKResponse {
 		return mkZKErr(xid, zxid, errNoNode)
 	}
 
-	glog.V(7).Infof("Sync(%v) = (zxid=%v, resp=%+v)", xid, zxid, *resp)
+	klog.V(7).Infof("Sync(%v) = (zxid=%v, resp=%+v)", xid, zxid, *resp)
 	return mkZKResp(xid, zxid, &CreateResponse{op.Path})
 }
 
@@ -544,7 +544,7 @@ func (z *zkEtcd) Multi(xid Xid, mreq *MultiRequest) ZKResponse {
 	}
 
 	mresp := reply(xid, ZXid(resp.Header.Revision))
-	glog.V(7).Infof("Multi(%v) = (zxid=%v); txnresp: %+v", *mreq, resp.Header.Revision, *resp)
+	klog.V(7).Infof("Multi(%v) = (zxid=%v); txnresp: %+v", *mreq, resp.Header.Revision, *resp)
 	return mresp
 }
 
@@ -574,7 +574,7 @@ func (z *zkEtcd) mkCheckVersionPathTxnOp(op *CheckVersionRequest) opBundle {
 }
 
 func (z *zkEtcd) Close(xid Xid, op *CloseRequest) ZKResponse {
-	resp, _ := z.c.Revoke(z.c.Ctx(), etcd.LeaseID(z.s.Sid()))
+	resp, _ := z.c.Revoke(z.c.Ctx(), clientv3.LeaseID(z.s.Sid()))
 	zxid := ZXid(0)
 	if resp != nil {
 		zxid = ZXid(resp.Header.Revision)
@@ -594,18 +594,18 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 				State: StateSyncConnected,
 				Path:  dataPath,
 			}
-			glog.V(7).Infof("WatchData* (%v,%v,%v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchData* (%v,%v,%v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(op.RelativeZxid, xid, p, EventNodeDataChanged, f)
 	}
 
-	ops := make([]etcd.Op, len(op.ExistWatches))
+	ops := make([]clientv3.Op, len(op.ExistWatches))
 	for i, ew := range op.ExistWatches {
-		ops[i] = etcd.OpGet(
+		ops[i] = clientv3.OpGet(
 			mkPathVer(mkPath(ew)),
-			etcd.WithSerializable(),
-			etcd.WithRev(int64(op.RelativeZxid)))
+			clientv3.WithSerializable(),
+			clientv3.WithRev(int64(op.RelativeZxid)))
 	}
 
 	resp, err := z.c.Txn(z.c.Ctx()).Then(ops...).Commit()
@@ -628,7 +628,7 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 				State: StateSyncConnected,
 				Path:  existPath,
 			}
-			glog.V(7).Infof("WatchExist* (%v,%v,%v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchExist* (%v,%v,%v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(op.RelativeZxid, xid, p, ev, f)
@@ -642,7 +642,7 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 				State: StateSyncConnected,
 				Path:  childPath,
 			}
-			glog.V(7).Infof("WatchChild* (%v,%v,%v)", xid, newzxid, *wresp)
+			klog.V(7).Infof("WatchChild* (%v,%v,%v)", xid, newzxid, *wresp)
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(op.RelativeZxid, xid, p, EventNodeChildrenChanged, f)
@@ -650,11 +650,11 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 
 	swresp := &SetWatchesResponse{}
 
-	glog.V(7).Infof("SetWatches(%v) = (zxid=%v, resp=%+v)", xid, curZXid, *swresp)
+	klog.V(7).Infof("SetWatches(%v) = (zxid=%v, resp=%+v)", xid, curZXid, *swresp)
 	return mkZKResp(xid, curZXid, swresp)
 }
 
-func (z *zkEtcd) doWrappedSTM(xid Xid, applyf func(s v3sync.STM) error, prefetch ...string) (*etcd.TxnResponse, ZKResponse) {
+func (z *zkEtcd) doWrappedSTM(xid Xid, applyf func(s v3sync.STM) error, prefetch ...string) (*clientv3.TxnResponse, ZKResponse) {
 	var apiErr error
 	resp, err := z.doSTM(wrapErr(&apiErr, applyf), prefetch...)
 	if err != nil {
@@ -674,7 +674,7 @@ func apiErrToZKErr(xid Xid, zxid ZXid, apiErr error) ZKResponse {
 	return mkZKErr(xid, zxid, errCode)
 }
 
-func (z *zkEtcd) doSTM(applyf func(s v3sync.STM) error, prefetch ...string) (*etcd.TxnResponse, error) {
+func (z *zkEtcd) doSTM(applyf func(s v3sync.STM) error, prefetch ...string) (*clientv3.TxnResponse, error) {
 	return v3sync.NewSTM(
 		z.c,
 		applyf,

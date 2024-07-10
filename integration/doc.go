@@ -17,8 +17,3 @@
 // Build `go test -tags zkdocker` to run tests against a zookeeper instance
 // over docker.
 package integration
-
-// force import so glide picks it up
-import (
-	_ "github.com/coreos/etcd/integration"
-)

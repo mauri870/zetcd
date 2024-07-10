@@ -17,9 +17,9 @@ package zetcd
 import (
 	"sync"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/golang/glog"
+	"go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
+	"k8s.io/klog/v2"
 )
 
 type Session interface {
@@ -34,8 +34,8 @@ type Session interface {
 type session struct {
 	Conn
 	*watches
-	id  etcd.LeaseID
-	c   *etcd.Client
+	id  clientv3.LeaseID
+	c   *clientv3.Client
 	req ConnectRequest
 
 	leaseZXid ZXid
@@ -45,7 +45,7 @@ type session struct {
 func (s *session) ConnReq() ConnectRequest { return s.req }
 func (s *session) Backing() interface{}    { return s }
 
-func newSession(c *etcd.Client, zkc Conn, id etcd.LeaseID) (*session, error) {
+func newSession(c *clientv3.Client, zkc Conn, id clientv3.LeaseID) (*session, error) {
 	ctx, cancel := context.WithCancel(c.Ctx())
 	s := &session{Conn: zkc, id: id, c: c, watches: newWatches(c)}
 
@@ -56,9 +56,9 @@ func newSession(c *etcd.Client, zkc Conn, id etcd.LeaseID) (*session, error) {
 	}
 
 	go func() {
-		glog.V(9).Infof("starting the session... id=%v", id)
+		klog.V(9).Infof("starting the session... id=%v", id)
 		defer func() {
-			glog.V(9).Infof("finishing the session... id=%v; expect revoke...", id)
+			klog.V(9).Infof("finishing the session... id=%v; expect revoke...", id)
 			cancel()
 			s.Close()
 		}()

@@ -20,7 +20,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
 )
 
 type Conn interface {
@@ -136,7 +136,7 @@ func (c *conn) Send(xid Xid, zxid ZXid, resp interface{}) error {
 	defer c.mu.RUnlock()
 	select {
 	case c.outc <- sendMsg{buf, 4 + pktlen}:
-		glog.V(9).Infof("conn.Send(xid=%v, zxid=%v, %+v)", xid, zxid, resp)
+		klog.V(9).Infof("conn.Send(xid=%v, zxid=%v, %+v)", xid, zxid, resp)
 	case <-c.donec:
 	}
 	return nil

@@ -13,14 +13,14 @@ Protocol encoding and decoding heavily based on [go-zookeeper](http://github.com
 Forward ZooKeeper requests on `:2181` to an etcd server listening on `localhost:2379`:
 
 ```sh
-go get github.com/etcd-io/zetcd/cmd/zetcd
+go get github.com/mauri870/zetcd/cmd/zetcd
 zetcd --zkaddr 0.0.0.0:2181 --endpoints localhost:2379
 ```
 
 Simple testing with `zkctl`:
 
 ```sh
-go get github.com/etcd-io/zetcd/cmd/zkctl
+go get github.com/mauri870/zetcd/cmd/zkctl
 zkctl watch / &
 zkctl create /abc "foo"
 ```
@@ -47,7 +47,7 @@ zetcd --zkaddr 0.0.0.0:2181 --endpoints localhost:2379 --debug-zkbridge localhos
 
 - Mailing list: [etcd-dev](https://groups.google.com/g/etcd-dev)
 - Slack: [#etcd](https://kubernetes.slack.com/messages/C3HD8ARJ5/details/) channel on Kubernetes ([get an invite](http://slack.kubernetes.io/))
-- Bugs: [issues](https://github.com/etcd-io/zetcd/issues)
+- Bugs: [issues](https://github.com/mauri870/zetcd/issues)
 
 ## Contributing
 

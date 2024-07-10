@@ -19,8 +19,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/etcd-io/zetcd"
-	"github.com/golang/glog"
+	"github.com/mauri870/zetcd"
+	"k8s.io/klog/v2"
 )
 
 // zkXchk takes incoming ZK requests and forwards them to a remote ZK server
@@ -315,7 +315,7 @@ func (xchk *zkXchk) reportErr(cr, or zetcd.ZKResponse, err error) {
 		return
 	}
 	xerr := &XchkError{err: err, cr: cr, or: or}
-	glog.Warning(xerr)
+	klog.Warning(xerr)
 	if xchk.errc != nil {
 		select {
 		case xchk.errc <- xerr:

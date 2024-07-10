@@ -15,25 +15,25 @@
 package zetcd
 
 import (
-	etcd "github.com/coreos/etcd/clientv3"
+	"go.etcd.io/etcd/client/v3"
 )
 
-func statGetsRev(p string, rev int64) []etcd.Op {
-	return []etcd.Op{
-		etcd.OpGet(mkPathCTime(p), etcd.WithSerializable(), etcd.WithRev(rev)),
-		etcd.OpGet(mkPathMTime(p), etcd.WithSerializable(), etcd.WithRev(rev),
-			etcd.WithSort(etcd.SortByModRevision, etcd.SortDescend)),
-		etcd.OpGet(mkPathKey(p), etcd.WithSerializable(), etcd.WithRev(rev)),
-		etcd.OpGet(mkPathCVer(p), etcd.WithSerializable(), etcd.WithRev(rev)),
-		etcd.OpGet(mkPathACL(p), etcd.WithSerializable(), etcd.WithRev(rev), etcd.WithKeysOnly()),
+func statGetsRev(p string, rev int64) []clientv3.Op {
+	return []clientv3.Op{
+		clientv3.OpGet(mkPathCTime(p), clientv3.WithSerializable(), clientv3.WithRev(rev)),
+		clientv3.OpGet(mkPathMTime(p), clientv3.WithSerializable(), clientv3.WithRev(rev),
+			clientv3.WithSort(clientv3.SortByModRevision, clientv3.SortDescend)),
+		clientv3.OpGet(mkPathKey(p), clientv3.WithSerializable(), clientv3.WithRev(rev)),
+		clientv3.OpGet(mkPathCVer(p), clientv3.WithSerializable(), clientv3.WithRev(rev)),
+		clientv3.OpGet(mkPathACL(p), clientv3.WithSerializable(), clientv3.WithRev(rev), clientv3.WithKeysOnly()),
 		// to compute num children
-		etcd.OpGet(getListPfx(p), etcd.WithSerializable(), etcd.WithRev(rev), etcd.WithPrefix()),
+		clientv3.OpGet(getListPfx(p), clientv3.WithSerializable(), clientv3.WithRev(rev), clientv3.WithPrefix()),
 	}
 }
 
-func statGets(p string) []etcd.Op { return statGetsRev(p, 0) }
+func statGets(p string) []clientv3.Op { return statGetsRev(p, 0) }
 
-func statTxn(p string, txnresp *etcd.TxnResponse) (s Stat, err error) {
+func statTxn(p string, txnresp *clientv3.TxnResponse) (s Stat, err error) {
 	ctime := txnresp.Responses[0].GetResponseRange()
 	mtime := txnresp.Responses[1].GetResponseRange()
 	node := txnresp.Responses[2].GetResponseRange()

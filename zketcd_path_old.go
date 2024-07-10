@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build !path_debug && path_old
 // +build !path_debug,path_old
 
 package zetcd

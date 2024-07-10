@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/etcd-io/zetcd"
-	"github.com/golang/glog"
+	"github.com/mauri870/zetcd"
+	"k8s.io/klog/v2"
 )
 
 // conn implements a Conn that xchks several conns
@@ -98,7 +98,7 @@ func (c *conn) processSendOOB(sp sendPkt) {
 				return
 			}
 		case <-time.After(3 * time.Second):
-			glog.Warningf("xchk failed waited too long to match response to %+v", *sp.wev)
+			klog.Warningf("xchk failed waited too long to match response to %+v", *sp.wev)
 			newSp = sp
 		}
 		c.mu.Lock()
@@ -107,9 +107,9 @@ func (c *conn) processSendOOB(sp sendPkt) {
 		}
 		c.mu.Unlock()
 		if *newSp.wev != *sp.wev {
-			glog.Warningf("xchk failed (path:%q): %+v != %+v", sp.wev.Path, *sp.wev, *newSp.wev)
+			klog.Warningf("xchk failed (path:%q): %+v != %+v", sp.wev.Path, *sp.wev, *newSp.wev)
 		}
-		glog.V(6).Infof("xchkSendOOB response %+v", *sp.wev)
+		klog.V(6).Infof("xchkSendOOB response %+v", *sp.wev)
 		c.zkc.Send(sp.xid, sp.zxid, sp.wev)
 	}()
 }
@@ -128,7 +128,7 @@ func (c *conn) sendLoop() {
 }
 
 func (c *conn) Send(xid zetcd.Xid, zxid zetcd.ZXid, resp interface{}) error {
-	glog.V(6).Infof("sendXchk Xid:%v ZXid:%v Resp:%+v", xid, zxid, resp)
+	klog.V(6).Infof("sendXchk Xid:%v ZXid:%v Resp:%+v", xid, zxid, resp)
 	return c.zkc.Send(xid, zxid, resp)
 }
 
@@ -161,11 +161,11 @@ type sendPkt struct {
 }
 
 func (c *connWorker) Send(xid zetcd.Xid, zxid zetcd.ZXid, resp interface{}) error {
-	glog.V(7).Infof("connWorkerSend(%v,%v,%+v)", xid, zxid, resp)
+	klog.V(7).Infof("connWorkerSend(%v,%v,%+v)", xid, zxid, resp)
 
 	wev, ok := resp.(*zetcd.WatcherEvent)
 	if !ok {
-		glog.Fatalf("unexpected send response %+v", resp)
+		klog.Fatalf("unexpected send response %+v", resp)
 	}
 
 	select {

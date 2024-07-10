@@ -17,7 +17,7 @@ package zetcd
 import (
 	"net"
 
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
 )
 
 // AuthConn transfers zookeeper handshaking for establishing a session
@@ -47,10 +47,10 @@ func (ac *authConn) Read() (*AuthRequest, error) {
 	req := &ConnectRequest{}
 	flw, err := ReadPacket(ac.c, req)
 	if err != nil {
-		glog.V(6).Infof("error reading connection request (%v)", err)
+		klog.V(6).Infof("error reading connection request (%v)", err)
 		return nil, err
 	}
-	glog.V(6).Infof("auth(%+v)", req)
+	klog.V(6).Infof("auth(%+v)", req)
 	return &AuthRequest{req, flw}, nil
 }
 
