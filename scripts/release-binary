@@ -2,6 +2,6 @@
 
 REPO_PATH=github.com/mauri870/zetcd
 
-go build -o $GOPATH/bin/zetcd -v \
+go install -v \
   -ldflags "-w -X $REPO_PATH/version.Version=$VERSION -X $REPO_PATH/version.SHA=$SHA" \
-  $REPO_PATH/cmd/zetcd
+  ./cmd/zetcd
