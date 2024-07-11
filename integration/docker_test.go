@@ -21,7 +21,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -130,7 +129,7 @@ func buildTar(files ...string) (io.Reader, error) {
 	defer tr.Close()
 	now := time.Now()
 	for _, f := range files {
-		dat, derr := ioutil.ReadFile(f)
+		dat, derr := os.ReadFile(f)
 		if derr != nil {
 			return nil, derr
 		}
