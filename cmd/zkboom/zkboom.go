@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/samuel/go-zookeeper/zk"
+	"github.com/go-zookeeper/zk"
 	"github.com/spf13/cobra"
 	"go.etcd.io/etcd/pkg/v3/report"
 	"golang.org/x/time/rate"

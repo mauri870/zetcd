@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/fsouza/go-dockerclient v1.11.0
-	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414
+	github.com/go-zookeeper/zk v1.0.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	go.etcd.io/etcd/client/pkg/v3 v3.5.14

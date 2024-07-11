@@ -19,8 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-zookeeper/zk"
 	"github.com/mauri870/zetcd"
-	"github.com/samuel/go-zookeeper/zk"
 )
 
 var (
