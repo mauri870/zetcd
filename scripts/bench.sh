@@ -14,7 +14,7 @@ function run_config {
 	workload="$2"
 	tidy
 	sleep 1s
-	goreman -f scripts/Procfile."$config".$workload start &
+	go run github.com/mattn/goreman@v0.3.15 -f scripts/Procfile."$config".$workload start &
 	pid=$!
 	sleep 10s
 	./scripts/bench-$workload.sh >bench.$config.$workload
