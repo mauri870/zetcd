@@ -13,14 +13,14 @@ Protocol encoding and decoding heavily based on [go-zookeeper](http://github.com
 Forward ZooKeeper requests on `:2181` to an etcd server listening on `localhost:2379`:
 
 ```sh
-go get github.com/mauri870/zetcd/cmd/zetcd
+go install github.com/mauri870/zetcd/cmd/zetcd@latest
 zetcd --zkaddr 0.0.0.0:2181 --endpoints localhost:2379
 ```
 
 Simple testing with `zkctl`:
 
 ```sh
-go get github.com/mauri870/zetcd/cmd/zkctl
+go install github.com/mauri870/zetcd/cmd/zkctl@latest
 zkctl watch / &
 zkctl create /abc "foo"
 ```
