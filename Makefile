@@ -27,8 +27,11 @@ clean:
 	rm -rf bin/
 
 test:
-	go get -t -v ./...
 	go test -v -race ./integration
+
+lint:
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
+	golangci-lint run ./...
 
 SRC=$(shell find -name \*.go | grep -v vendor | cut -f2- -d'/')
 

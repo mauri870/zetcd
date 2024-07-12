@@ -1,0 +1,45 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.21", "1.22"]
+    services:
+      etcd:
+        image: bitnami/etcd:3.5.14
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+        ports: ["2379:2379"]
+      zookeeper:
+        image: zookeeper:3.9.2
+        ports: ["2182:2181"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - uses: golang/govulncheck-action@v1
+      - name: go get
+        run: go get .
+      - name: test
+        run: make test
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+  vuln:
+    name: vuln
+    runs-on: ubuntu-latest
+    steps:
+      - id: govulncheck
+        uses: golang/govulncheck-action@v1

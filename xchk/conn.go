@@ -110,7 +110,9 @@ func (c *conn) processSendOOB(sp sendPkt) {
 			klog.Warningf("xchk failed (path:%q): %+v != %+v", sp.wev.Path, *sp.wev, *newSp.wev)
 		}
 		klog.V(6).Infof("xchkSendOOB response %+v", *sp.wev)
-		c.zkc.Send(sp.xid, sp.zxid, sp.wev)
+		if err := c.zkc.Send(sp.xid, sp.zxid, sp.wev); err != nil {
+			klog.Warningf("xchkSendOOB failed to send %+v: %v", *sp.wev, err)
+		}
 	}()
 }
 

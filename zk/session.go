@@ -158,6 +158,7 @@ func (s *session) recvLoop() {
 		}
 
 		klog.V(6).Infof("zk/zkSessOOB=%+v %+v", resp.Hdr, r)
+		//nolint:errcheck
 		s.Send(resp.Hdr.Xid, resp.Hdr.Zxid, r)
 	}
 }

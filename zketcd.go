@@ -166,6 +166,7 @@ func (z *zkEtcd) GetChildren2(xid Xid, op *GetChildren2Request) ZKResponse {
 				Path:  op.Path,
 			}
 			klog.V(7).Infof("WatchChild (%v,%v,%+v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, EventNodeChildrenChanged, f)
@@ -284,6 +285,7 @@ func (z *zkEtcd) Exists(xid Xid, op *ExistsRequest) ZKResponse {
 				Path:  op.Path,
 			}
 			klog.V(7).Infof("WatchExists (%v,%v,%+v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, ev, f)
@@ -322,6 +324,7 @@ func (z *zkEtcd) GetData(xid Xid, op *GetDataRequest) ZKResponse {
 				Path:  op.Path,
 			}
 			klog.V(7).Infof("WatchData (%v,%v,%+v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, EventNodeDataChanged, f)
@@ -443,6 +446,7 @@ func (z *zkEtcd) GetChildren(xid Xid, op *GetChildrenRequest) ZKResponse {
 				Path:  op.Path,
 			}
 			klog.V(7).Infof("WatchChild (%v,%v,%+v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(zxid, xid, p, EventNodeChildrenChanged, f)
@@ -595,6 +599,7 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 				Path:  dataPath,
 			}
 			klog.V(7).Infof("WatchData* (%v,%v,%v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(op.RelativeZxid, xid, p, EventNodeDataChanged, f)
@@ -629,6 +634,7 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 				Path:  existPath,
 			}
 			klog.V(7).Infof("WatchExist* (%v,%v,%v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(op.RelativeZxid, xid, p, ev, f)
@@ -643,6 +649,7 @@ func (z *zkEtcd) SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse {
 				Path:  childPath,
 			}
 			klog.V(7).Infof("WatchChild* (%v,%v,%v)", xid, newzxid, *wresp)
+			//nolint:errcheck
 			z.s.Send(-1, -1, wresp)
 		}
 		z.s.Watch(op.RelativeZxid, xid, p, EventNodeChildrenChanged, f)
@@ -700,6 +707,7 @@ func (z *zkEtcd) incrementAndGetZxid() (ZXid, error) {
 
 func encodeACLs(acls []ACL) string {
 	var b bytes.Buffer
+	//nolint:errcheck
 	gob.NewEncoder(&b).Encode(acls)
 	return b.String()
 }
@@ -707,6 +715,7 @@ func encodeACLs(acls []ACL) string {
 func decodeACLs(acls []byte) (ret []ACL) {
 	var b bytes.Buffer
 	b.Write(acls)
+	//nolint:errcheck
 	gob.NewDecoder(&b).Decode(&ret)
 	return ret
 }

@@ -136,6 +136,7 @@ func getSubCommands(cmd *cobra.Command) []*cobra.Command {
 func usageFunc(cmd *cobra.Command) error {
 	subCommands := getSubCommands(cmd)
 	tabOut := getTabOutWithWriter(os.Stdout)
+	//nolint:errcheck
 	commandUsageTemplate.Execute(tabOut, struct {
 		Cmd         *cobra.Command
 		LocalFlags  string

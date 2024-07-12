@@ -181,9 +181,13 @@ func doReport(requests <-chan func(*zk.Conn) error) {
 		go func(c *zk.Conn) {
 			defer wg.Done()
 			for op := range requests {
-				limit.Wait(context.Background())
+				err := limit.Wait(context.Background())
+				if err != nil {
+					r.Results() <- report.Result{Err: err}
+					return
+				}
 				st := time.Now()
-				err := op(c)
+				err = op(c)
 				r.Results() <- report.Result{Err: err, Start: st, End: time.Now()}
 			}
 		}(conn)

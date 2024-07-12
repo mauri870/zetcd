@@ -31,6 +31,7 @@ type zetcdCluster struct {
 }
 
 func NewZetcdCluster(t *testing.T) *zetcdCluster {
+	integration.BeforeTest(t)
 	clus := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 1})
 	donec := make(chan struct{})
 
