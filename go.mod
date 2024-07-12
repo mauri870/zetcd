@@ -1,6 +1,6 @@
 module github.com/mauri870/zetcd
 
-go 1.22.0
+go 1.21.0
 
 require (
 	github.com/fsouza/go-dockerclient v1.11.0

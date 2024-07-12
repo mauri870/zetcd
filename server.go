@@ -80,8 +80,10 @@ func serveRequest(s Session, zke ZK, zkreq ZKRequest) error {
 		return zkresp.Err
 	}
 	if zkresp.Hdr.Err == 0 {
+		//nolint:errcheck
 		s.Send(zkresp.Hdr.Xid, zkresp.Hdr.Zxid, zkresp.Resp)
 	} else {
+		//nolint:errcheck
 		s.Send(zkresp.Hdr.Xid, zkresp.Hdr.Zxid, &zkresp.Hdr.Err)
 	}
 	return nil

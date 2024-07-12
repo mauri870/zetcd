@@ -142,6 +142,7 @@ func main() {
 			fmt.Printf("failed to listen on pprof address %q (%v)\n", *pprofAddr, err)
 		}
 		pprofServer := &http.Server{Handler: httpmux}
+		//nolint:errcheck
 		go pprofServer.Serve(pprofListener)
 	}
 

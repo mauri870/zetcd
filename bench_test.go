@@ -39,6 +39,7 @@ func benchGet(b *testing.B, addr string) {
 		b.Fatal(err)
 	}
 	defer c.Close()
+	//nolint:errcheck
 	c.Create("/abc", []byte("abc"), 0, acl)
 	for i := 0; i < b.N; i++ {
 		if _, _, gerr := c.Get("/abc"); gerr != nil {
@@ -69,7 +70,9 @@ func benchCreateSet(b *testing.B, addr string) {
 	for i := 0; i < b.N; i++ {
 		s := fmt.Sprintf("/%d", i)
 		v := fmt.Sprintf("%v", time.Now())
+		//nolint:errcheck
 		c.Create(s, []byte(v), 0, acl)
+		//nolint:errcheck
 		c.Set("/", []byte(v), -1)
 	}
 }
