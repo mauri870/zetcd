@@ -6,7 +6,7 @@ docker run \
     -e SHA=$SHA \
     -v $PWD:/go/src/github.com/mauri870/zetcd:ro \
     -w /go/src/github.com/mauri870/zetcd \
-    golang:1.10.2-alpine \
+    golang:1.22.5-alpine \
     /bin/sh -x -c scripts/release-binary
 
 docker cp $( cat cid ):/go/bin/zetcd bin/zetcd-release
