@@ -7,6 +7,9 @@ COMMIT=`git rev-parse HEAD`
 # check if the current commit has a matching tag
 TAGEXACT=$(git describe --exact-match --abbrev=0 --tags ${COMMIT} 2> /dev/null || true)
 TAG=$(git describe --abbrev=0 --tags 2> /dev/null || true)
+if [ -z "$TAG" ]; then
+    TAG="latest"
+fi
 
 # use the matching tag as the version, if available
 if [ -z "$TAGEXACT" ]; then
