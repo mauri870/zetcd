@@ -19,20 +19,20 @@ import (
 	"testing"
 
 	"github.com/mauri870/zetcd"
-	"go.etcd.io/etcd/tests/v3/integration"
+	"go.etcd.io/etcd/tests/v3/framework/integration"
 )
 
 type zetcdCluster struct {
 	zkClientAddr string
 
-	etcdClus *integration.ClusterV3
+	etcdClus *integration.Cluster
 	cancel   func()
 	donec    <-chan struct{}
 }
 
 func NewZetcdCluster(t *testing.T) *zetcdCluster {
 	integration.BeforeTest(t)
-	clus := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 1})
+	clus := integration.NewCluster(t, &integration.ClusterConfig{Size: 1})
 	donec := make(chan struct{})
 
 	// TODO use unix socket
