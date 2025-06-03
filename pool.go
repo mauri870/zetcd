@@ -17,10 +17,11 @@ package zetcd
 import (
 	"bytes"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"sync"
 
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"k8s.io/klog/v2"
 )
 
@@ -49,7 +50,7 @@ func (sp *SessionPool) Auth(zka AuthConn) (Session, error) {
 	if areq.FourLetterWord == flwRUOK {
 		//nolint:errcheck
 		zka.Write(AuthResponse{FourLetterWord: flwIMOK})
-		return nil, fmt.Errorf(flwRUOK)
+		return nil, errors.New(flwRUOK)
 	}
 
 	req := areq.Req

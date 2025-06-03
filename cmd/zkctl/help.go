@@ -88,7 +88,7 @@ GLOBAL OPTIONS:
 {{end}}
 `[1:]
 
-	commandUsageTemplate = template.Must(template.New("command_usage").Funcs(templFuncs).Parse(strings.Replace(commandUsage, "\\\n", "", -1)))
+	commandUsageTemplate = template.Must(template.New("command_usage").Funcs(templFuncs).Parse(strings.ReplaceAll(commandUsage, "\\\n", "")))
 }
 
 func zkctlFlagUsages(flagSet *pflag.FlagSet) string {
@@ -148,7 +148,9 @@ func usageFunc(cmd *cobra.Command) error {
 		zkctlFlagUsages(cmd.InheritedFlags()),
 		subCommands,
 	})
-	tabOut.Flush()
+	if err := tabOut.Flush(); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -17,7 +17,7 @@ package zetcd
 import (
 	"sync"
 
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
 )
@@ -72,7 +72,7 @@ func newSession(c *clientv3.Client, zkc Conn, id clientv3.LeaseID) (*session, er
 					continue
 				}
 				s.mu.Lock()
-				s.leaseZXid = ZXid(ka.ResponseHeader.Revision)
+				s.leaseZXid = ZXid(ka.Revision)
 				s.mu.Unlock()
 			case <-s.StopNotify():
 				return
@@ -86,7 +86,7 @@ func newSession(c *clientv3.Client, zkc Conn, id clientv3.LeaseID) (*session, er
 func (s *session) Sid() Sid { return Sid(s.id) }
 
 func (s *session) Close() {
-	s.watches.close()
+	s.close()
 	s.Conn.Close()
 }
 

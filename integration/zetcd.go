@@ -50,8 +50,12 @@ func NewZetcdCluster(t *testing.T) *zetcdCluster {
 		zkClientAddr: "127.0.0.1:30000",
 
 		etcdClus: clus,
-		cancel:   func() { ln.Close() },
-		donec:    donec,
+		cancel: func() {
+			if err := ln.Close(); err != nil {
+				t.Errorf("failed to close listener: %v", err)
+			}
+		},
+		donec: donec,
 	}
 }
 

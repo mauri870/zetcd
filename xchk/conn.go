@@ -144,6 +144,7 @@ func (c *conn) Close() {
 		close(ch)
 	}
 	c.oobRespPath = nil
+	//nolint:errcheck
 	c.zkc.Close()
 	c.mu.Unlock()
 	<-c.donec

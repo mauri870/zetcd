@@ -73,6 +73,7 @@ func NewClusterXChk(oracle, candidate zkCluster) *zkClusterXchk {
 func (zc *zkClusterXchk) Addr() string { return zc.zkClientAddr }
 
 func (zc *zkClusterXchk) Close(t *testing.T) {
+	//nolint:errcheck
 	zc.ln.Close()
 	zc.cancel()
 	<-zc.donec

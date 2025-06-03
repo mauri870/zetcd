@@ -171,7 +171,7 @@ func getCommandFunc(cmd *cobra.Command, args []string) {
 	if err != nil {
 		exitOn(err)
 	}
-	fmt.Println(dat)
+	fmt.Println(string(dat))
 	fmt.Printf("Stat:\n%+v\n", st)
 }
 

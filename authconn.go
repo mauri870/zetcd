@@ -56,7 +56,7 @@ func (ac *authConn) Read() (*AuthRequest, error) {
 
 func (ac *authConn) Write(ar AuthResponse) (Conn, error) {
 	if ar.Resp == nil {
-		defer ac.c.Close()
+		defer ac.c.Close() //nolint:errcheck
 		_, err := ac.c.Write([]byte(ar.FourLetterWord))
 		return nil, err
 	}
@@ -70,6 +70,7 @@ func (ac *authConn) Write(ar AuthResponse) (Conn, error) {
 
 func (ac *authConn) Close() {
 	if ac.c != nil {
+		//nolint:errcheck
 		ac.c.Close()
 	}
 }

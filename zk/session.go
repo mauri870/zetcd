@@ -69,6 +69,7 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	// send connection request
 	if err = zetcd.WritePacket(zkconn, areq.Req); err != nil {
 		klog.V(6).Infof("failed to write connection request (%v)", err)
+		//nolint:errcheck
 		zkconn.Close()
 		return nil, err
 	}
@@ -82,6 +83,7 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	// pass response back to proxy
 	zkc, aerr := zka.Write(zetcd.AuthResponse{Resp: &resp, FourLetterWord: flw})
 	if zkc == nil || aerr != nil {
+		//nolint:errcheck
 		zkconn.Close()
 		return nil, aerr
 	}

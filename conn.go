@@ -148,6 +148,7 @@ func (c *conn) Close() {
 		close(c.stopc)
 		close(c.outc)
 		c.outc = nil
+		//nolint:errcheck
 		c.zkc.Close()
 	}
 	c.mu.Unlock()
