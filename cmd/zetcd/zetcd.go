@@ -21,15 +21,18 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mauri870/zetcd"
 	"github.com/mauri870/zetcd/version"
 	"github.com/mauri870/zetcd/xchk"
 	"github.com/mauri870/zetcd/zk"
 	"go.etcd.io/etcd/client/pkg/v3/transport"
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	etcdembed "go.etcd.io/etcd/server/v3/embed"
 	"golang.org/x/net/context"
 )
 
@@ -115,6 +118,7 @@ func main() {
 	zkaddr := flag.String("zkaddr", "", "address for serving zookeeper clients")
 	oracle := flag.String("debug-oracle", "", "oracle zookeeper server address")
 	bridgeAddr := flag.String("debug-zkbridge", "", "bridge zookeeper server address")
+	embeddedEtcd := flag.Bool("embedded-etcd", false, "use embedded etcd server instead of connecting to an external one")
 
 	flag.Parse()
 	fmt.Println("Running zetcd proxy")
@@ -155,6 +159,41 @@ func main() {
 	var p personality
 	serv := zetcd.Serve
 	etcdEps := strings.Split(*etcdAddrs, ",")
+
+	if *embeddedEtcd {
+		if len(etcdEps) != 1 {
+			fmt.Println("expected -endpoints to have one endpoint for embedded etcd")
+			os.Exit(1)
+		}
+		fmt.Println("Starting embedded etcd server")
+		proto := "http"
+		if len(*etcdCertFile) != 0 {
+			proto = "https"
+		}
+		ep := etcdEps[0]
+		clientURL, err := url.Parse(fmt.Sprintf("%s://%s", proto, ep))
+		if err != nil {
+			fmt.Printf("failed to parse etcd endpoint %q (%v)\n", ep, err)
+			os.Exit(1)
+		}
+		e, err := startEmbeddedEtcdServer(clientURL)
+		//nolint:errcheck
+		defer e.Close()
+		select {
+		case <-e.Server.ReadyNotify():
+			fmt.Println("Server is ready!")
+		case <-time.After(60 * time.Second):
+			e.Server.Stop()
+			fmt.Printf("Server took too long to start!")
+			os.Exit(1)
+		}
+		if err != nil {
+			fmt.Printf("failed to start embedded etcd server (%v)\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Embedded etcd server started at %s\n", *etcdAddrs)
+	}
+
 	switch {
 	case *oracle != "":
 		if len(*etcdAddrs) == 0 || len(*bridgeAddr) == 0 {
@@ -181,4 +220,15 @@ func main() {
 	}
 
 	serv(p.ctx, ln, p.authf, p.zkf)
+}
+
+func startEmbeddedEtcdServer(clientURL *url.URL) (*etcdembed.Etcd, error) {
+	cfg := etcdembed.NewConfig()
+	cfg.ListenClientUrls = []url.URL{*clientURL}
+	cfg.Dir = "default.etcd"
+	e, err := etcdembed.StartEtcd(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return e, nil
 }
