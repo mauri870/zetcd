@@ -17,6 +17,12 @@ go install github.com/mauri870/zetcd/cmd/zetcd@latest
 zetcd --zkaddr 0.0.0.0:2181 --endpoints localhost:2379
 ```
 
+For simplicity, zetcd can also start its own embedded etcd server. This is useful for testing or development purposes:
+
+```sh
+zetcd --zkaddr 0.0.0.0:2181 --endpoints localhost:2379 --embedded-etcd
+```
+
 Simple testing with `zkctl`:
 
 ```sh
