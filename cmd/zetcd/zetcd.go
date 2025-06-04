@@ -177,6 +177,10 @@ func main() {
 			os.Exit(1)
 		}
 		e, err := startEmbeddedEtcdServer(clientURL)
+		if err != nil {
+			fmt.Printf("failed to start embedded etcd server (%v)\n", err)
+			os.Exit(1)
+		}
 		//nolint:errcheck
 		defer e.Close()
 		select {
@@ -185,10 +189,6 @@ func main() {
 		case <-time.After(60 * time.Second):
 			e.Server.Stop()
 			fmt.Printf("Server took too long to start!")
-			os.Exit(1)
-		}
-		if err != nil {
-			fmt.Printf("failed to start embedded etcd server (%v)\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("Embedded etcd server started at %s\n", *etcdAddrs)
