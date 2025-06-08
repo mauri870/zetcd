@@ -14,8 +14,8 @@
 
 // In order to run the benchmarks you need to have zookeeper, etcd and zketcd running:
 //
-// docker run -p 2181:2181 zookeeper:3.9.2
-// docker run -p 2379:2379 -e ALLOW_NONE_AUTHENTICATION=yes bitnami/etcd:3.5.14
+// docker run -p 2181:2181 zookeeper:3.9.3
+// docker run -p 2379:2379 -e ALLOW_NONE_AUTHENTICATION=yes bitnami/etcd:3.6.1
 // go run ./cmd/zetcd --zkaddr 0.0.0.0:2182 --endpoints localhost:2379
 //
 // Then you can run the benchmarks:

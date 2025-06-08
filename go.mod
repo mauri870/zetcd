@@ -7,10 +7,11 @@ require (
 	github.com/go-zookeeper/zk v1.0.4
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.6
-	go.etcd.io/etcd/client/pkg/v3 v3.6.0
-	go.etcd.io/etcd/client/v3 v3.6.0
-	go.etcd.io/etcd/pkg/v3 v3.6.0
-	go.etcd.io/etcd/tests/v3 v3.6.0
+	go.etcd.io/etcd/client/pkg/v3 v3.6.1
+	go.etcd.io/etcd/client/v3 v3.6.1
+	go.etcd.io/etcd/pkg/v3 v3.6.1
+	go.etcd.io/etcd/server/v3 v3.6.1
+	go.etcd.io/etcd/tests/v3 v3.6.1
 	golang.org/x/net v0.40.0
 	golang.org/x/time v0.11.0
 	k8s.io/klog/v2 v2.130.1
@@ -77,9 +78,8 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
-	go.etcd.io/etcd/api/v3 v3.6.0 // indirect
-	go.etcd.io/etcd/etcdctl/v3 v3.6.0 // indirect
-	go.etcd.io/etcd/server/v3 v3.6.0 // indirect
+	go.etcd.io/etcd/api/v3 v3.6.1 // indirect
+	go.etcd.io/etcd/etcdctl/v3 v3.6.1 // indirect
 	go.etcd.io/gofail v0.2.0 // indirect
 	go.etcd.io/raft/v3 v3.6.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
