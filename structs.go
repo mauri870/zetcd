@@ -83,7 +83,7 @@ type MultiHeader struct {
 
 type MultiRequestOp struct {
 	Header MultiHeader
-	Op     interface{}
+	Op     any
 }
 type MultiRequest struct {
 	Ops        []MultiRequestOp

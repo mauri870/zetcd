@@ -126,7 +126,7 @@ func createCommandFunc(cmd *cobra.Command, args []string) {
 	go func() {
 		defer close(requests)
 		val := make([]byte, zkBoomCreateValSize)
-		for i := 0; i < zkBoomTotal; i++ {
+		for i := range zkBoomTotal {
 			n := i
 			requests <- func(c *zk.Conn) error {
 				key := fmt.Sprintf("/k-%d", n)
@@ -146,7 +146,7 @@ func setCommandFunc(cmd *cobra.Command, args []string) {
 	go func() {
 		defer close(requests)
 		val := make([]byte, zkBoomCreateValSize)
-		for i := 0; i < zkBoomTotal; i++ {
+		for range zkBoomTotal {
 			requests <- func(c *zk.Conn) error {
 				_, err := c.Set(args[0], val, -1)
 				return err
@@ -160,7 +160,7 @@ func getCommandFunc(cmd *cobra.Command, args []string) {
 	requests := make(chan func(*zk.Conn) error)
 	go func() {
 		defer close(requests)
-		for i := 0; i < zkBoomTotal; i++ {
+		for range zkBoomTotal {
 			requests <- func(c *zk.Conn) error {
 				_, _, err := c.Get(args[0])
 				return err

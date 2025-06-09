@@ -367,7 +367,7 @@ func TestExistsW(t *testing.T) {
 		}
 
 		// test (multi) set
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			ok, _, ch, err = c.ExistsW("/abc")
 			if !ok || err != nil {
 				t.Fatal(err)
@@ -580,7 +580,7 @@ func TestMultiOp(t *testing.T) { runTest(t, testMultiOp) }
 
 func testMultiOp(t *testing.T, c *zk.Conn) {
 	// test create+create => same zxid
-	ops := []interface{}{
+	ops := []any{
 		&zk.CreateRequest{Path: "/abc", Data: []byte("foo"), Acl: acl},
 		&zk.CreateRequest{Path: "/def", Data: []byte("bar"), Acl: acl},
 	}
@@ -599,7 +599,7 @@ func testMultiOp(t *testing.T, c *zk.Conn) {
 		t.Fatalf("expected zxids in %+v to match %+v", *s1, *s2)
 	}
 	// test 2 create, 1 delete
-	ops = []interface{}{
+	ops = []any{
 		&zk.CreateRequest{Path: "/foo", Data: []byte("foo"), Acl: acl},
 		&zk.DeleteRequest{Path: "/def"},
 		&zk.CreateRequest{Path: "/bar", Data: []byte("foo"), Acl: acl},
@@ -622,14 +622,14 @@ func testMultiOp(t *testing.T, c *zk.Conn) {
 		t.Fatalf("expected zxids in %+v to match %+v", *s1, *s2)
 	}
 	// test create on key that already exists
-	ops = []interface{}{
+	ops = []any{
 		&zk.CreateRequest{Path: "/foo", Data: []byte("foo"), Acl: acl},
 	}
 	if _, err := c.Multi(ops...); err == nil || err.Error() != zetcd.ErrAPIError.Error() {
 		t.Fatalf("expected %v, got %v", zetcd.ErrAPIError, err)
 	}
 	// test create+delete on same key == no key
-	ops = []interface{}{
+	ops = []any{
 		&zk.CreateRequest{Path: "/create-del", Data: []byte("foo"), Acl: acl},
 		&zk.DeleteRequest{Path: "/create-del"},
 		// update foo to get version=1
@@ -647,7 +647,7 @@ func testMultiOp(t *testing.T, c *zk.Conn) {
 		t.Fatalf("expected %v, got %v", zetcd.ErrNoNode, err)
 	}
 	// test version check mismatch
-	ops = []interface{}{
+	ops = []any{
 		&zk.CreateRequest{Path: "/test1", Data: []byte("foo"), Acl: acl},
 		&zk.CheckVersionRequest{Path: "/foo", Version: 2},
 	}
@@ -659,7 +659,7 @@ func testMultiOp(t *testing.T, c *zk.Conn) {
 		t.Fatalf("expected %v, got (%v,%v)", zetcd.ErrNoNode, s1, err)
 	}
 	// test version check match
-	ops = []interface{}{
+	ops = []any{
 		&zk.CheckVersionRequest{Path: "/foo", Version: 1},
 		&zk.CreateRequest{Path: "/test1", Data: []byte("foo"), Acl: acl},
 		&zk.CreateRequest{Path: "/test2", Data: []byte("foo"), Acl: acl},
@@ -677,7 +677,7 @@ func testMultiOp(t *testing.T, c *zk.Conn) {
 		t.Fatalf("expected zxids in %+v to match %+v", *s1, *s2)
 	}
 	// test version missing key
-	ops = []interface{}{
+	ops = []any{
 		&zk.CheckVersionRequest{Path: "/missing-key", Version: 0},
 	}
 	if _, err = c.Multi(ops...); err == nil || err.Error() != zetcd.ErrAPIError.Error() {
@@ -688,7 +688,7 @@ func testMultiOp(t *testing.T, c *zk.Conn) {
 		t.Fatalf("expected empty resp, got (%+v,%v)", resp, err)
 	}
 	// test setdata if path exists
-	ops = []interface{}{
+	ops = []any{
 		&zk.SetDataRequest{Path: "/foo", Data: []byte("foo"), Version: -1},
 		&zk.CreateRequest{Path: "/set-txn", Data: []byte("foo"), Acl: acl},
 	}

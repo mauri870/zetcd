@@ -130,7 +130,7 @@ func Auth(sp *sessionPool, zka zetcd.AuthConn, cAuth, oAuth zetcd.AuthFunc) (zet
 
 func (s *session) ConnReq() zetcd.ConnectRequest { return s.req }
 
-func (s *session) Backing() interface{} { return s }
+func (s *session) Backing() any { return s }
 
 func (s *session) Sid() zetcd.Sid { return s.oracle.Sid() }
 

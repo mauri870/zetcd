@@ -28,7 +28,7 @@ type Session interface {
 	Sid() Sid
 	ZXid() ZXid
 	ConnReq() ConnectRequest
-	Backing() interface{}
+	Backing() any
 }
 
 type session struct {
@@ -43,7 +43,7 @@ type session struct {
 }
 
 func (s *session) ConnReq() ConnectRequest { return s.req }
-func (s *session) Backing() interface{}    { return s }
+func (s *session) Backing() any            { return s }
 
 func newSession(c *clientv3.Client, zkc Conn, id clientv3.LeaseID) (*session, error) {
 	ctx, cancel := context.WithCancel(c.Ctx())

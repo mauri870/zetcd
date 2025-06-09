@@ -78,7 +78,7 @@ func newWatches(c *clientv3.Client) *watches {
 		ctx:    ctx,
 		cancel: cancel,
 	}
-	for i := 0; i < len(ws.path2watch); i++ {
+	for i := range len(ws.path2watch) {
 		ws.path2watch[i] = make(map[string]*watch)
 	}
 	return ws

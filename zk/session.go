@@ -42,7 +42,7 @@ func (s *session) Sid() zetcd.Sid   { return s.sid }
 func (s *session) ZXid() zetcd.ZXid { return 111111 }
 
 func (s *session) ConnReq() zetcd.ConnectRequest { return s.connReq }
-func (s *session) Backing() interface{}          { return s }
+func (s *session) Backing() any                  { return s }
 
 func (s *session) Close() {
 	s.Conn.Close()
@@ -104,7 +104,7 @@ func newSession(servers []string, zka zetcd.AuthConn) (*session, error) {
 	return s, nil
 }
 
-func (s *session) future(xid zetcd.Xid, op interface{}) <-chan zetcd.ZKResponse {
+func (s *session) future(xid zetcd.Xid, op any) <-chan zetcd.ZKResponse {
 	ch := make(chan zetcd.ZKResponse, 1)
 	if s.futures == nil {
 		klog.V(6).Infof("futuresClosed=%+v", op)
@@ -152,7 +152,7 @@ func (s *session) recvLoop() {
 		s.mu.Unlock()
 
 		// out of band requests (i.e., watches)
-		var r interface{}
+		var r any
 		if resp.Hdr.Err != 0 {
 			r = &resp.Hdr.Err
 		} else {

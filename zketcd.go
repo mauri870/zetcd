@@ -742,7 +742,7 @@ func mkZKErr(xid Xid, zxid ZXid, err ErrCode) ZKResponse {
 	return ZKResponse{Hdr: &ResponseHeader{xid, zxid - 1, err}}
 }
 
-func mkZKResp(xid Xid, zxid ZXid, resp interface{}) ZKResponse {
+func mkZKResp(xid Xid, zxid ZXid, resp any) ZKResponse {
 	return ZKResponse{Hdr: &ResponseHeader{xid, zxid - 1, 0}, Resp: resp}
 }
 
