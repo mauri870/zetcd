@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"sync"
@@ -56,7 +57,7 @@ func init() {
 	cobra.EnablePrefixMatching = true
 	rootCmd.PersistentFlags().IntVar(&zkBoomConns, "conns", 1, "Total number of connections")
 	rootCmd.PersistentFlags().StringSliceVar(&zkBoomEndpoints, "endpoints", []string{"127.0.0.1:2181"}, "Zookeeper client endpoints")
-	rootCmd.PersistentFlags().IntVar(&zkBoomRate, "rate", 0, "Maximum requests per second (0 is no limit)")
+	rootCmd.PersistentFlags().IntVar(&zkBoomRate, "rate", math.MaxInt, "Maximum requests per second (0 means no events will be processed)")
 	rootCmd.PersistentFlags().BoolVar(&zkBoomSample, "samples", false, "Report time-series sample results")
 	rootCmd.PersistentFlags().BoolVar(&zkBoomPrecise, "precise", false, "Print high precision results")
 	rootCmd.PersistentFlags().IntVar(&zkBoomTimeoutSeconds, "timeout", 5, "Timeout for ZooKeeper client in seconds")
