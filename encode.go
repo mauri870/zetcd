@@ -72,7 +72,7 @@ func decodePacket(buf []byte, st any) (n int, err error) {
 func decodePacketValue(buf []byte, v reflect.Value) (int, error) {
 	rv := v
 	kind := v.Kind()
-	if kind == reflect.Ptr {
+	if kind == reflect.Pointer {
 		if v.IsNil() {
 			v.Set(reflect.New(v.Type().Elem()))
 		}
