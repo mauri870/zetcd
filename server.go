@@ -105,16 +105,24 @@ func openSession(conn net.Conn, auth AuthFunc, zk ZKFunc) (Session, ZK, error) {
 
 func serveByHandler(h acceptHandler, ctx context.Context, ln net.Listener, auth AuthFunc, zk ZKFunc) {
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			klog.V(5).Infof("Accept()=%v", err)
-		} else {
-			go h(conn, auth, zk)
-		}
+		acceptCh := make(chan net.Conn)
+		errCh := make(chan error)
+		go func() {
+			conn, err := ln.Accept()
+			if err != nil {
+				errCh <- err
+				return
+			}
+			acceptCh <- conn
+		}()
+
 		select {
 		case <-ctx.Done():
 			return
-		default:
+		case err := <-errCh:
+			klog.V(5).Infof("Accept()=%v", err)
+		case conn := <-acceptCh:
+			go h(conn, auth, zk)
 		}
 	}
 }
