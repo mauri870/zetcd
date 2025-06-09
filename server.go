@@ -15,6 +15,7 @@
 package zetcd
 
 import (
+	"errors"
 	"net"
 	"sync"
 
@@ -104,18 +105,30 @@ func openSession(conn net.Conn, auth AuthFunc, zk ZKFunc) (Session, ZK, error) {
 }
 
 func serveByHandler(h acceptHandler, ctx context.Context, ln net.Listener, auth AuthFunc, zk ZKFunc) {
+	go func() {
+		<-ctx.Done()
+		if err := ln.Close(); err != nil {
+			if !errors.Is(err, net.ErrClosed) {
+				klog.Errorf("failed to close listener: %v", err)
+			}
+		}
+
+		klog.V(5).Infof("listener closed, exiting Serve()")
+	}()
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			klog.V(5).Infof("Accept()=%v", err)
-		} else {
-			go h(conn, auth, zk)
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				klog.V(5).Infof("Accept()=%v", err)
+				continue
+			}
 		}
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
+
+		go h(conn, auth, zk)
 	}
 }
 

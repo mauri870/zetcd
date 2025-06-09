@@ -15,6 +15,7 @@
 package integration
 
 import (
+	"errors"
 	"net"
 	"testing"
 
@@ -52,6 +53,9 @@ func NewZetcdCluster(t *testing.T) *zetcdCluster {
 		etcdClus: clus,
 		cancel: func() {
 			if err := ln.Close(); err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					return
+				}
 				t.Errorf("failed to close listener: %v", err)
 			}
 		},

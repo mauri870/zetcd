@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/http/pprof"
+	netpprof "net/http/pprof"
 	"net/url"
 	"os"
+	"os/signal"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -55,11 +57,12 @@ func getTlsConfig(etcdCertFile string, etcdKeyFile string, etcdCaFile string) (*
 	return tlsConfig, nil
 }
 
-func newZKSecureEtcd(etcdEps []string, tlsConfig *tls.Config) (p personality) {
+func newZKSecureEtcd(ctx context.Context, etcdEps []string, tlsConfig *tls.Config) (p personality) {
 	// talk to the etcd3 server
 	c, err := clientv3.New(clientv3.Config{
 		Endpoints: etcdEps,
 		TLS:       tlsConfig,
+		Context:   ctx,
 	})
 	if err != nil {
 		panic(err)
@@ -70,10 +73,11 @@ func newZKSecureEtcd(etcdEps []string, tlsConfig *tls.Config) (p personality) {
 	return p
 }
 
-func newZKEtcd(etcdEps []string) (p personality) {
+func newZKEtcd(ctx context.Context, etcdEps []string) (p personality) {
 	// talk to the etcd3 server
 	c, err := clientv3.New(clientv3.Config{
 		Endpoints: etcdEps,
+		Context:   ctx,
 	})
 	if err != nil {
 		panic(err)
@@ -84,21 +88,21 @@ func newZKEtcd(etcdEps []string) (p personality) {
 	return p
 }
 
-func newBridge(bridgeAddr string) (p personality) {
+func newBridge(ctx context.Context, bridgeAddr string) (p personality) {
 	// proxy to zk server
 	p.authf = zk.NewAuth([]string{bridgeAddr})
 	p.zkf = zk.NewZK()
-	p.ctx = context.Background()
+	p.ctx = ctx
 	return p
 }
 
-func newOracle(etcdEps []string, bridgeAddr, oracle string) (p personality) {
+func newOracle(ctx context.Context, etcdEps []string, bridgeAddr, oracle string) (p personality) {
 	var cper, oper personality
 	switch oracle {
 	case "zk":
-		cper, oper = newZKEtcd(etcdEps), newBridge(bridgeAddr)
+		cper, oper = newZKEtcd(ctx, etcdEps), newBridge(ctx, bridgeAddr)
 	case "etcd":
-		oper, cper = newZKEtcd(etcdEps), newBridge(bridgeAddr)
+		oper, cper = newZKEtcd(ctx, etcdEps), newBridge(ctx, bridgeAddr)
 	default:
 		fmt.Println("oracle expected etcd or zk, got", oracle)
 		os.Exit(1)
@@ -112,6 +116,7 @@ func newOracle(etcdEps []string, bridgeAddr, oracle string) (p personality) {
 func main() {
 	etcdAddrs := flag.String("endpoints", "", "etcd3 client address")
 	pprofAddr := flag.String("pprof-addr", "", "enable pprof with a listen address")
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	etcdCertFile := flag.String("certfile", "", "etcd3 cert file")
 	etcdKeyFile := flag.String("keyfile", "", "etcd3 key file")
 	etcdCaFile := flag.String("cafile", "", "etcd3 ca file")
@@ -125,21 +130,37 @@ func main() {
 	fmt.Println("Version:", version.Version)
 	fmt.Println("SHA:", version.SHA)
 
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+
 	if len(*zkaddr) == 0 {
 		fmt.Println("expected -zkaddr")
 		os.Exit(1)
 	}
 
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer pprof.StopCPUProfile()
+	}
+
 	if len(*pprofAddr) != 0 {
 		httpmux := http.NewServeMux()
 		pfx := "/debug/pprof/"
-		httpmux.Handle(pfx, http.HandlerFunc(pprof.Index))
-		httpmux.Handle(pfx+"profile", http.HandlerFunc(pprof.Profile))
-		httpmux.Handle(pfx+"symbol", http.HandlerFunc(pprof.Index))
-		httpmux.Handle(pfx+"cmdline", http.HandlerFunc(pprof.Cmdline))
-		httpmux.Handle(pfx+"trace", http.HandlerFunc(pprof.Trace))
+		httpmux.Handle(pfx, http.HandlerFunc(netpprof.Index))
+		httpmux.Handle(pfx+"profile", http.HandlerFunc(netpprof.Profile))
+		httpmux.Handle(pfx+"symbol", http.HandlerFunc(netpprof.Index))
+		httpmux.Handle(pfx+"cmdline", http.HandlerFunc(netpprof.Cmdline))
+		httpmux.Handle(pfx+"trace", http.HandlerFunc(netpprof.Trace))
 		for _, s := range []string{"heap", "goroutine", "threadcreate", "block"} {
-			httpmux.Handle(pfx+s, pprof.Handler(s))
+			httpmux.Handle(pfx+s, netpprof.Handler(s))
 		}
 		pprofListener, err := net.Listen("tcp", *pprofAddr)
 		if err != nil {
@@ -200,7 +221,7 @@ func main() {
 			fmt.Println("expected -endpoints and -zkbridge")
 			os.Exit(1)
 		}
-		p = newOracle(etcdEps, *bridgeAddr, *oracle)
+		p = newOracle(ctx, etcdEps, *bridgeAddr, *oracle)
 		serv = zetcd.ServeSerial
 	case len(*etcdAddrs) != 0 && len(*bridgeAddr) != 0:
 		fmt.Println("expected -endpoints or -zkbridge but not both")
@@ -208,17 +229,18 @@ func main() {
 	case len(*etcdAddrs) != 0:
 		if len(*etcdCertFile) != 0 && len(*etcdKeyFile) != 0 && len(*etcdCaFile) != 0 {
 			tlsConfig, _ := getTlsConfig(*etcdCertFile, *etcdKeyFile, *etcdCaFile)
-			p = newZKSecureEtcd(etcdEps, tlsConfig)
+			p = newZKSecureEtcd(ctx, etcdEps, tlsConfig)
 		} else {
-			p = newZKEtcd(etcdEps)
+			p = newZKEtcd(ctx, etcdEps)
 		}
 	case len(*bridgeAddr) != 0:
-		p = newBridge(*bridgeAddr)
+		p = newBridge(ctx, *bridgeAddr)
 	default:
 		fmt.Println("expected -endpoints or -zkbridge")
 		os.Exit(1)
 	}
 
+	fmt.Println("Listening on", *zkaddr)
 	serv(p.ctx, ln, p.authf, p.zkf)
 }
 
