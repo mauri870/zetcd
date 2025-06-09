@@ -24,7 +24,7 @@ import (
 )
 
 type Conn interface {
-	Send(xid Xid, zxid ZXid, resp interface{}) error
+	Send(xid Xid, zxid ZXid, resp any) error
 	Read() <-chan ZKRequest
 	StopNotify() <-chan struct{}
 	Close()
@@ -49,7 +49,7 @@ type conn struct {
 
 type ZKRequest struct {
 	xid Xid
-	req interface{}
+	req any
 	err error
 }
 
@@ -105,7 +105,7 @@ func NewConn(zk net.Conn) Conn {
 
 func (c *conn) Read() <-chan ZKRequest { return c.readc }
 
-func (c *conn) Send(xid Xid, zxid ZXid, resp interface{}) error {
+func (c *conn) Send(xid Xid, zxid ZXid, resp any) error {
 	buf := bufpool.Get().([]byte)
 	hdr := &ResponseHeader{Xid: xid, Zxid: zxid, Err: errOk}
 

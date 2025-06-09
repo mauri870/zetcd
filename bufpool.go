@@ -31,15 +31,15 @@ const maxBufs = 128
 var bufpool bufPool
 
 func init() {
-	bufpool.New = func() interface{} { return make([]byte, 2*1024*1024) }
+	bufpool.New = func() any { return make([]byte, 2*1024*1024) }
 }
 
-func (bp *bufPool) Get() interface{} {
+func (bp *bufPool) Get() any {
 	atomic.AddInt32(&bp.total, 1)
 	return bp.Pool.Get()
 }
 
-func (bp *bufPool) Put(v interface{}) {
+func (bp *bufPool) Put(v any) {
 	if atomic.AddInt32(&bp.total, -1) > maxBufs {
 		return
 	}

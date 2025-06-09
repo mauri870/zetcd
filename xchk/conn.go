@@ -129,7 +129,7 @@ func (c *conn) sendLoop() {
 	}
 }
 
-func (c *conn) Send(xid zetcd.Xid, zxid zetcd.ZXid, resp interface{}) error {
+func (c *conn) Send(xid zetcd.Xid, zxid zetcd.ZXid, resp any) error {
 	klog.V(6).Infof("sendXchk Xid:%v ZXid:%v Resp:%+v", xid, zxid, resp)
 	return c.zkc.Send(xid, zxid, resp)
 }
@@ -163,7 +163,7 @@ type sendPkt struct {
 	wev  *zetcd.WatcherEvent
 }
 
-func (c *connWorker) Send(xid zetcd.Xid, zxid zetcd.ZXid, resp interface{}) error {
+func (c *connWorker) Send(xid zetcd.Xid, zxid zetcd.ZXid, resp any) error {
 	klog.V(7).Infof("connWorkerSend(%v,%v,%+v)", xid, zxid, resp)
 
 	wev, ok := resp.(*zetcd.WatcherEvent)

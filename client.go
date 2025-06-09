@@ -39,7 +39,7 @@ type client struct {
 }
 
 type Client interface {
-	Send(xid Xid, req interface{}) error
+	Send(xid Xid, req any) error
 	Read() <-chan ZKResponse
 	StopNotify() <-chan struct{}
 	Close()
@@ -49,7 +49,7 @@ type ZKResponse struct {
 	// data to be send back to the proxy's client
 
 	Hdr  *ResponseHeader
-	Resp interface{}
+	Resp any
 
 	// Err is from transmission errors, etc
 	Err error
@@ -69,7 +69,7 @@ func NewClient(ctx context.Context, zk net.Conn) Client {
 
 	go func() {
 		defer close(c.readc)
-		xid2op := func(xid Xid) interface{} { return c.xid2resp(xid) }
+		xid2op := func(xid Xid) any { return c.xid2resp(xid) }
 		for {
 			hdr, resp, err := readRespOp(c.zkc, xid2op)
 			if hdr != nil {
@@ -109,7 +109,7 @@ func (c *client) ackXid(xid Xid) {
 	c.mu.Unlock()
 }
 
-func (c *client) xid2resp(xid Xid) interface{} {
+func (c *client) xid2resp(xid Xid) any {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	op, ok := c.xids[xid]
@@ -123,7 +123,7 @@ func (c *client) xid2resp(xid Xid) interface{} {
 func (c *client) Read() <-chan ZKResponse { return c.readc }
 
 // Send sends a zookeeper request.
-func (c *client) Send(xid Xid, req interface{}) error {
+func (c *client) Send(xid Xid, req any) error {
 	hdr := &requestHeader{Xid: xid, Opcode: req2op(req)}
 	if hdr.Opcode == opInvalid {
 		return ErrAPIError

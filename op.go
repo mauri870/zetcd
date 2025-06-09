@@ -18,7 +18,7 @@ import "fmt"
 
 // use a map
 
-func op2req(op Op) interface{} {
+func op2req(op Op) any {
 	switch op {
 	case opGetChildren2:
 		return &GetChildren2Request{}
@@ -59,7 +59,7 @@ func op2req(op Op) interface{} {
 	return nil
 }
 
-func op2resp(op Op) interface{} {
+func op2resp(op Op) any {
 	switch op {
 	case opGetChildren2:
 		return &GetChildren2Response{}
@@ -97,7 +97,7 @@ func op2resp(op Op) interface{} {
 	return nil
 }
 
-func req2op(req interface{}) Op {
+func req2op(req any) Op {
 	switch req.(type) {
 	case *GetChildren2Request:
 		return opGetChildren2

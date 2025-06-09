@@ -25,7 +25,7 @@ func mkPath(zkPath string) string {
 		p = "/" + p
 	}
 	depth := 0
-	for i := 0; i < len(p); i++ {
+	for i := range len(p) {
 		if p[i] == '/' {
 			depth++
 		}

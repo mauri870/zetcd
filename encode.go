@@ -51,7 +51,7 @@ type encoder interface {
 	Encode(buf []byte) (int, error)
 }
 
-func decodePacket(buf []byte, st interface{}) (n int, err error) {
+func decodePacket(buf []byte, st any) (n int, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(runtime.Error); ok && e.Error() == "runtime error: slice bounds out of range" {
@@ -63,7 +63,7 @@ func decodePacket(buf []byte, st interface{}) (n int, err error) {
 	}()
 
 	v := reflect.ValueOf(st)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
+	if v.Kind() != reflect.Pointer || v.IsNil() {
 		return 0, ErrPtrExpected
 	}
 	return decodePacketValue(buf, v)
@@ -90,7 +90,7 @@ func decodePacketValue(buf []byte, v reflect.Value) (int, error) {
 		} else if de, ok := v.Interface().(decoder); ok {
 			return de.Decode(buf)
 		} else {
-			for i := 0; i < v.NumField(); i++ {
+			for i := range v.NumField() {
 				field := v.Field(i)
 				n2, err := decodePacketValue(buf[n:], field)
 				n += n2
@@ -119,7 +119,7 @@ func decodePacketValue(buf []byte, v reflect.Value) (int, error) {
 			n += 4
 			values := reflect.MakeSlice(v.Type(), count, count)
 			v.Set(values)
-			for i := 0; i < count; i++ {
+			for i := range count {
 				n2, err := decodePacketValue(buf[n:], values.Index(i))
 				n += n2
 				if err != nil {
@@ -142,7 +142,7 @@ func decodePacketValue(buf []byte, v reflect.Value) (int, error) {
 	return n, nil
 }
 
-func encodePacket(buf []byte, st interface{}) (n int, err error) {
+func encodePacket(buf []byte, st any) (n int, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(runtime.Error); ok && e.Error() == "runtime error: slice bounds out of range" {
@@ -176,7 +176,7 @@ func encodePacketValue(buf []byte, v reflect.Value) (int, error) {
 		} else if en, ok := v.Interface().(encoder); ok {
 			return en.Encode(buf)
 		} else {
-			for i := 0; i < v.NumField(); i++ {
+			for i := range v.NumField() {
 				field := v.Field(i)
 				n2, err := encodePacketValue(buf[n:], field)
 				n += n2
@@ -209,7 +209,7 @@ func encodePacketValue(buf []byte, v reflect.Value) (int, error) {
 			count := v.Len()
 			startN := n
 			n += 4
-			for i := 0; i < count; i++ {
+			for i := range count {
 				n2, err := encodePacketValue(buf[n:], v.Index(i))
 				n += n2
 				if err != nil {
@@ -232,7 +232,7 @@ func encodePacketValue(buf []byte, v reflect.Value) (int, error) {
 	return n, nil
 }
 
-func ReadPacket(zk net.Conn, r interface{}) (string, error) {
+func ReadPacket(zk net.Conn, r any) (string, error) {
 	buf := make([]byte, 256)
 	_, err := io.ReadFull(zk, buf[:4])
 	if string(buf[:4]) == flwRUOK {
@@ -253,7 +253,7 @@ func ReadPacket(zk net.Conn, r interface{}) (string, error) {
 	return "", err
 }
 
-func WritePacket(zk net.Conn, r interface{}) error {
+func WritePacket(zk net.Conn, r any) error {
 	buf := make([]byte, 256)
 	n, err := encodePacket(buf[4:], r)
 	if err != nil {
@@ -399,7 +399,7 @@ func readBuf(zk net.Conn) ([]byte, uint32, error) {
 	return buf, blen, nil
 }
 
-func readReqOp(zk net.Conn) (Xid, interface{}, error) {
+func readReqOp(zk net.Conn) (Xid, any, error) {
 	buf, blen, err := readBuf(zk)
 	if err != nil {
 		return 0, nil, err
@@ -415,7 +415,7 @@ func readReqOp(zk net.Conn) (Xid, interface{}, error) {
 
 }
 
-func readRespOp(zk net.Conn, xid2resp func(Xid) interface{}) (*ResponseHeader, interface{}, error) {
+func readRespOp(zk net.Conn, xid2resp func(Xid) any) (*ResponseHeader, any, error) {
 	buf, blen, err := readBuf(zk)
 	if err != nil {
 		return nil, nil, err
@@ -426,7 +426,7 @@ func readRespOp(zk net.Conn, xid2resp func(Xid) interface{}) (*ResponseHeader, i
 		return nil, nil, herr
 	}
 
-	var resp interface{}
+	var resp any
 	if hdr.Err != 0 {
 		return hdr, nil, nil
 	}

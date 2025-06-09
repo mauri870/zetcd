@@ -36,7 +36,7 @@ type ZK interface {
 	SetWatches(xid Xid, op *SetWatchesRequest) ZKResponse
 }
 
-func DispatchZK(zk ZK, xid Xid, op interface{}) ZKResponse {
+func DispatchZK(zk ZK, xid Xid, op any) ZKResponse {
 	switch op := op.(type) {
 	case *CreateRequest:
 		return zk.Create(xid, op)
