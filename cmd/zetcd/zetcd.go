@@ -144,7 +144,10 @@ func main() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		pprof.StartCPUProfile(f)
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		defer pprof.StopCPUProfile()
 	}
 
